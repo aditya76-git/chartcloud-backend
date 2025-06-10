@@ -1,0 +1,17 @@
+{
+  "name": "chartcloud-backend",
+  "version": "1.0.0",
+  "description": "chartcloud-backend",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.js"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10"
+  }
+}
