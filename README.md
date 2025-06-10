@@ -11,6 +11,4 @@
   <a href="https://github.com/aditya76-git/chartcloud-backend">chartcloud-backend</a>
 </div>
 
-<br />
-
 # chartcloud-backend
