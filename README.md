@@ -10,5 +10,3 @@
   <a href="https://github.com/aditya76-git">aditya76-git</a> /
   <a href="https://github.com/aditya76-git/chartcloud-backend">chartcloud-backend</a>
 </div>
-
-# chartcloud-backend
