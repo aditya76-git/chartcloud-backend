@@ -258,7 +258,7 @@ export const signup = async (req, res) => {
     await user.save();
 
     res.status(201).json({
-      errro: false,
+      success: true,
       message: "Your account has been created successfully",
     });
   } catch (error) {
@@ -269,6 +269,7 @@ export const signup = async (req, res) => {
         message: "Validation failed.",
       });
     }
+    console.log(error);
 
     return res.status(500).json({
       success: false,

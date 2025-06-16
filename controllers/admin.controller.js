@@ -70,14 +70,36 @@ export const getUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "User fetched successfully",
-        data: user,
-      });
+    return res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      data: user,
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const getUserStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const verifiedUsers = await User.countDocuments({ verified: true });
+    const unverifiedUsers = totalUsers - verifiedUsers;
+
+    return res.status(200).json({
+      success: true,
+      message: "User stats fetched successfully",
+      count: {
+        totalUsers,
+        verifiedUsers,
+        unverifiedUsers,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch user stats",
+    });
   }
 };
