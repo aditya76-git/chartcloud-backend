@@ -11,6 +11,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../src/utils/jwt.util.js";
+import axios from "axios";
 import { hmacProcess, transporter } from "../src/utils/common.util.js";
 
 export const login = async (req, res) => {
@@ -300,4 +301,99 @@ export const refreshAccessToken = (req, res) => {
       access: newAccessToken,
     },
   });
+};
+
+export const githubLogin = (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Redirect URL generated successfully",
+    url: `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}`,
+  });
+};
+
+export const githubCallback = async (req, res) => {
+  const code = req.query.code;
+
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      message: "No authorization code provided",
+    });
+  }
+
+  try {
+    // Exchange code for GitHub access token
+    const tokenResponse = await axios.post(
+      "https://github.com/login/oauth/access_token",
+      {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code: code,
+      },
+      {
+        headers: { accept: "application/json" },
+      }
+    );
+
+    const access_token = tokenResponse.data.access_token;
+
+    if (!access_token) {
+      return res.status(401).json({
+        success: false,
+        message: "Failed to obtain access token",
+      });
+    }
+
+    // Fetch user profile from GitHub
+    const userResponse = await axios.get("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "Awesome-Octocat-App",
+      },
+    });
+
+    const githubUsername = userResponse.data.login;
+    const githubEmail = `${githubUsername}@github.com`;
+    const profilePicture = userResponse.data.avatar_url;
+
+    // Check if user exists
+    let user = await User.findOne({ username: githubUsername });
+
+    if (!user) {
+      // Create new user
+      user = new User({
+        username: githubUsername,
+        email: githubEmail,
+        profilePicture,
+        accountType: "github",
+        verified: true,
+        role: "user",
+        password: String(Math.floor(Math.random() * 1000000000000).toString()),
+      });
+
+      await user.save();
+    }
+
+    // Generate tokens
+    const access = generateAccessToken(user.username, user.role);
+    const refresh = generateRefreshToken(user.username, user.role);
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged in successfully",
+      token: {
+        access,
+        refresh,
+      },
+    });
+  } catch (error) {
+    console.error("GitHub auth error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: error.response?.data?.message || "GitHub authentication failed",
+    });
+  }
 };

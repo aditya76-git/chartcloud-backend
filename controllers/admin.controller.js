@@ -86,13 +86,20 @@ export const getUserStats = async (req, res) => {
     const verifiedUsers = await User.countDocuments({ verified: true });
     const unverifiedUsers = totalUsers - verifiedUsers;
 
+    const emailUsers = await User.countDocuments({ accountType: "email" });
+    const githubUsers = await User.countDocuments({ accountType: "github" });
+    const googleUsers = await User.countDocuments({ accountType: "google" });
+
     return res.status(200).json({
       success: true,
       message: "User stats fetched successfully",
       count: {
-        totalUsers,
-        verifiedUsers,
-        unverifiedUsers,
+        total: totalUsers,
+        verified: verifiedUsers,
+        unverified: unverifiedUsers,
+        google: googleUsers,
+        github: githubUsers,
+        email: emailUsers,
       },
     });
   } catch (error) {
