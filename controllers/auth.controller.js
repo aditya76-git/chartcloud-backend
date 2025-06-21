@@ -13,20 +13,29 @@ import {
 } from "../src/utils/jwt.util.js";
 import axios from "axios";
 import { hmacProcess, transporter } from "../src/utils/common.util.js";
+import { google } from "googleapis";
+
+const googleClient = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.FRONTEND_URL + "/callback/google"
+);
 
 export const login = async (req, res) => {
   try {
     const parsed = loginValidation.parse(req.body);
     const { username, password } = parsed;
 
-    const existingUser = await User.findOne({ username }).select("+password");
+    const existingUser = await User.findOne({
+      username,
+      accountType: "email",
+    }).select("+password");
 
     if (!existingUser) {
       return res
         .status(401)
         .json({ success: false, message: "User does not exists!" });
     }
-    // console.log(existingUser);
 
     const isPasswordValid = await bcrypt.compare(
       password,
@@ -359,7 +368,10 @@ export const githubCallback = async (req, res) => {
     const profilePicture = userResponse.data.avatar_url;
 
     // Check if user exists
-    let user = await User.findOne({ username: githubUsername });
+    let user = await User.findOne({
+      email: githubEmail,
+      accountType: "github",
+    });
 
     if (!user) {
       // Create new user
@@ -370,7 +382,6 @@ export const githubCallback = async (req, res) => {
         accountType: "github",
         verified: true,
         role: "user",
-        password: String(Math.floor(Math.random() * 1000000000000).toString()),
       });
 
       await user.save();
@@ -394,6 +405,101 @@ export const githubCallback = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.response?.data?.message || "GitHub authentication failed",
+    });
+  }
+};
+
+export const googleLogin = (req, res) => {
+  const url = googleClient.generateAuthUrl({
+    access_type: "offline",
+    scope: ["openid", "email", "profile"],
+    redirect_uri: process.env.FRONTEND_URL + "/callback/google",
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Redirect URL generated successfully",
+    url,
+  });
+};
+
+export const googleCallback = async (req, res) => {
+  const code = req.query.code;
+
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      message: "No authorization code provided",
+    });
+  }
+
+  try {
+    const { tokens } = await googleClient.getToken(code);
+    googleClient.setCredentials(tokens);
+
+    // Get user profile info
+    const oauth2 = google.oauth2({ version: "v2", auth: googleClient });
+    const userInfo = await oauth2.userinfo.get();
+    const userData = userInfo.data;
+
+    const googleEmail = userData.email;
+    const googleUsername = googleEmail.split("@")[0];
+    const profilePicture = userData.picture;
+
+    // Check if this email is already used with a different account type
+    const existingEmailUser = await User.findOne({
+      email: googleEmail,
+      accountType: "email",
+    });
+
+    if (existingEmailUser) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "This email is already used to sign up. You can't use Google login with it.",
+      });
+    }
+
+    // find (or create) user with Google account type
+    let user = await User.findOne({
+      email: googleEmail,
+      accountType: "google",
+    });
+
+    if (!user) {
+      user = new User({
+        username: googleUsername,
+        email: googleEmail,
+        profilePicture,
+        accountType: "google",
+        verified: true,
+        role: "user",
+      });
+
+      await user.save();
+    }
+
+    // Generate tokens
+    const access = generateAccessToken(user.username, user.role);
+    const refresh = generateRefreshToken(user.username, user.role);
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged in successfully",
+      token: {
+        access,
+        refresh,
+      },
+    });
+  } catch (error) {
+    console.error("Google auth error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.response?.data?.error_description ||
+        error.message ||
+        "Google authentication failed",
     });
   }
 };
