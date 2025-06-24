@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import File from "../models/file.model.js";
 import XLSX from "xlsx";
+import fs from "fs";
 
 export const listFiles = async (req, res) => {
   try {
@@ -172,9 +173,17 @@ export const uploadFile = async (req, res) => {
     });
 
     await newFile.save();
+
+    console.log(file.path);
+
+    fs.unlink(file.path, (err) => {
+      if (err) console.error("Failed to delete uploaded file:", err);
+    });
+
     res.status(200).json({
       success: true,
       message: "File uploaded and parsed successfully.",
+      file: newFile,
     });
   } catch (err) {
     console.error(err);
