@@ -11,8 +11,8 @@ import { adminMiddleware } from "../middlewares/admin.middleware.js";
 const router = express.Router();
 
 router.get("/users", adminMiddleware, listUsers);
-router.delete("/users/:id", adminMiddleware, deleteUser);
 router.get("/users/stats", adminMiddleware, getUserStats);
+router.delete("/users/:id", adminMiddleware, deleteUser);
 router.get("/users/:id", adminMiddleware, getUser);
 
 export default router;

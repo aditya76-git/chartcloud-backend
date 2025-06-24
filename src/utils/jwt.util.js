@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 
-export const generateAccessToken = (username, role) => {
+export const generateAccessToken = (username, id, role) => {
   const payload = {
     sub: username,
+    id,
     role,
     type: "access",
     issuer: "chartcloud",
@@ -13,9 +14,10 @@ export const generateAccessToken = (username, role) => {
   return jwt.sign(payload, process.env.JWT_ACCESS_SECRET, options);
 };
 
-export const generateRefreshToken = (username, role) => {
+export const generateRefreshToken = (username, id, role) => {
   const payload = {
     sub: username,
+    id,
     role,
     type: "refresh",
     issuer: "chartcloud",

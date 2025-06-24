@@ -48,8 +48,16 @@ export const login = async (req, res) => {
         .json({ success: false, message: "Invalid credentials!" });
     }
 
-    const accessToken = generateAccessToken(username, existingUser.role);
-    const refreshToken = generateRefreshToken(username, existingUser.role);
+    const accessToken = generateAccessToken(
+      username,
+      existingUser._id,
+      existingUser.role
+    );
+    const refreshToken = generateRefreshToken(
+      username,
+      existingUser._id,
+      existingUser.role
+    );
 
     return res.status(200).json({
       success: true,
@@ -291,7 +299,7 @@ export const signup = async (req, res) => {
 
 export const refreshAccessToken = (req, res) => {
   // From auth middleware
-  const { username, tokenType, role } = req;
+  const { username, tokenType, role, id } = req;
 
   console.log(role);
 
@@ -301,7 +309,7 @@ export const refreshAccessToken = (req, res) => {
       .json({ success: false, message: "Refresh token required" });
   }
 
-  const newAccessToken = generateAccessToken(username, role);
+  const newAccessToken = generateAccessToken(username, id, role);
 
   return res.status(200).json({
     success: true,
@@ -388,8 +396,8 @@ export const githubCallback = async (req, res) => {
     }
 
     // Generate tokens
-    const access = generateAccessToken(user.username, user.role);
-    const refresh = generateRefreshToken(user.username, user.role);
+    const access = generateAccessToken(user.username, user._id, user.role);
+    const refresh = generateRefreshToken(user.username, user._id, user.role);
 
     return res.status(200).json({
       success: true,
@@ -480,8 +488,8 @@ export const googleCallback = async (req, res) => {
     }
 
     // Generate tokens
-    const access = generateAccessToken(user.username, user.role);
-    const refresh = generateRefreshToken(user.username, user.role);
+    const access = generateAccessToken(user.username, user._id, user.role);
+    const refresh = generateRefreshToken(user.username, user._id, user.role);
 
     return res.status(200).json({
       success: true,

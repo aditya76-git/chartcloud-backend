@@ -20,6 +20,7 @@ export const authMiddleware = (req, res, next) => {
     req.tokenType = decoded.type;
     req.role = decoded.role;
     req.token = token;
+    req.id = decoded.id;
 
     next();
   } catch (err) {
