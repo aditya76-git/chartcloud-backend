@@ -142,13 +142,15 @@ export const toggleFileSharing = async (req, res) => {
     }
 
     res.status(200).json({
-      sucess: true,
+      success: true,
       message: `File is now ${file.sharing ? "public" : "private"}`,
       file,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error updating file sharing status" });
+    res
+      .status(500)
+      .json({ success: false, error: "Error updating file sharing status" });
   }
 };
 
@@ -161,7 +163,7 @@ export const uploadFile = async (req, res) => {
 
     const parsed = data;
     const headers = Object.keys(data[0] || {});
-
+    console.log(req.id);
     const newFile = new File({
       userId: req.id, // auth middleware
       filename: file.filename,
@@ -173,8 +175,6 @@ export const uploadFile = async (req, res) => {
     });
 
     await newFile.save();
-
-    console.log(file.path);
 
     fs.unlink(file.path, (err) => {
       if (err) console.error("Failed to delete uploaded file:", err);
@@ -189,6 +189,6 @@ export const uploadFile = async (req, res) => {
     console.error(err);
     res
       .status(500)
-      .json({ sucess: false, error: "Error uploading or parsing file." });
+      .json({ success: false, error: "Error uploading or parsing file." });
   }
 };
