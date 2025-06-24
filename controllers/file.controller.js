@@ -9,9 +9,11 @@ export const listFiles = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    const userId = req.id; // From auth middleware
+
     const [files, total] = await Promise.all([
-      File.find({}).skip(skip).limit(limit).lean(),
-      File.countDocuments(),
+      File.find({ userId }).skip(skip).limit(limit).lean(),
+      File.countDocuments({ userId }),
     ]);
 
     return res.status(200).json({
@@ -26,15 +28,18 @@ export const listFiles = async (req, res) => {
       },
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error", error });
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error,
+    });
   }
 };
 
 export const getFile = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.id; //auth middleware
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res
@@ -43,6 +48,12 @@ export const getFile = async (req, res) => {
     }
 
     const file = await File.findById(id);
+
+    if (file.userId.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Unauthorized to view this file" });
+    }
 
     if (!file) {
       return res
@@ -61,16 +72,24 @@ export const getFile = async (req, res) => {
 
 export const deleteFile = async (req, res) => {
   try {
-    // /users/:id
     const { id } = req.params;
+    const userId = req.id; // auth middleware
 
-    const deleted = await File.findByIdAndDelete(id);
+    const file = await File.findById(id);
 
-    if (!deleted) {
+    if (!file) {
       return res
         .status(404)
         .json({ success: false, message: "File not found" });
     }
+
+    if (file.userId.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Unauthorized to delete this file" });
+    }
+
+    await file.deleteOne();
 
     return res
       .status(200)
@@ -85,13 +104,25 @@ export const deleteFile = async (req, res) => {
 export const getFilesStats = async (req, res) => {
   try {
     const userId = req.id; // From auth middleware
-    const totalFiles = await File.countDocuments();
 
-    const publicFiles = await File.countDocuments({ sharing: true });
-    const privateFiles = await File.countDocuments({ sharing: false });
+    const totalFiles = await File.countDocuments({ userId });
+
+    const publicFiles = await File.countDocuments({
+      userId,
+      sharing: true,
+    });
+
+    const privateFiles = await File.countDocuments({
+      userId,
+      sharing: false,
+    });
 
     const result = await File.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+        },
+      },
       {
         $group: {
           _id: null,
@@ -138,7 +169,7 @@ export const toggleFileSharing = async (req, res) => {
     if (!file) {
       return res
         .status(404)
-        .json({ success: false, message: "File not found" });
+        .json({ success: false, message: "File not found or Unauthorized" });
     }
 
     res.status(200).json({
