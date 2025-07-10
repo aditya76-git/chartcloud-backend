@@ -259,6 +259,9 @@ export const addChartToFile = async (req, res) => {
       data: chart.data,
       xAxisDataKey: dataKey.xAxis,
       yAxisDataKey: dataKey.yAxis,
+      name: chart.name,
+      type: chart.type,
+      subType: chart.subType,
     });
 
     file.charts.push(newChart._id);

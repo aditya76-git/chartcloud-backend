@@ -32,8 +32,17 @@ const chartSchema = mongoose.Schema(
       type: String,
       required: [true, "yDataKey must be provided!"],
     },
-    legend: {
+    name: {
       type: String,
+      required: [true, "Chart name must be provided!"],
+    },
+    type: {
+      type: String,
+      required: [true, "Chart type must be provided!"],
+    },
+    subType: {
+      type: String,
+      required: [true, "Chart subtype must be provided!"],
     },
   },
   {
