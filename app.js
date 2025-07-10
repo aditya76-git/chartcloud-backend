@@ -6,7 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import fileRoutes from "./routes/file.routes.js";
-
+import chartRoutes from "./routes/chart.routes.js";
 import fs from "fs";
 import path from "path";
 
@@ -62,5 +62,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/user/files", fileRoutes);
+
+app.use("/api/user/charts", chartRoutes);
 
 export default app;

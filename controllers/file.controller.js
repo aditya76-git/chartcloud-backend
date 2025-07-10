@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import File from "../models/file.model.js";
+import Chart from "../models/chart.model.js";
 import XLSX from "xlsx";
 import fs from "fs";
 
@@ -221,5 +222,57 @@ export const uploadFile = async (req, res) => {
     res
       .status(500)
       .json({ success: false, error: "Error uploading or parsing file." });
+  }
+};
+
+export const addChartToFile = async (req, res) => {
+  try {
+    const userId = req.id; // From auth middleware
+    const { chart, dataKey } = req.body;
+
+    if (!chart?.config || !chart?.data) {
+      return res.status(400).json({
+        success: false,
+        message: "Chart config and data are required.",
+      });
+    }
+
+    if (!dataKey?.xAxis || !dataKey?.yAxis) {
+      return res
+        .status(400)
+        .json({ success: false, message: "x and y data keys are required." });
+    }
+
+    const fileId = req.params.id;
+
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res
+        .status(404)
+        .json({ success: false, message: "File not found." });
+    }
+
+    const newChart = await Chart.create({
+      userId,
+      fileId,
+      config: chart.config,
+      data: chart.data,
+      xAxisDataKey: dataKey.xAxis,
+      yAxisDataKey: dataKey.yAxis,
+    });
+
+    file.charts.push(newChart._id);
+    await file.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Chart created and linked to file successfully.",
+      chart: newChart,
+    });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
   }
 };

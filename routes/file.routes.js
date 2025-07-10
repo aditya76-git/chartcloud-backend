@@ -1,9 +1,10 @@
 import express from "express";
 import {
-  listFiles,
-  getFile,
+  addChartToFile,
   deleteFile,
+  getFile,
   getFilesStats,
+  listFiles,
   toggleFileSharing,
   uploadFile,
 } from "../controllers/file.controller.js";
@@ -19,6 +20,8 @@ router.get("/stats", authMiddleware, getFilesStats);
 
 router.get("/:id", authMiddleware, getFile);
 router.delete("/:id", authMiddleware, deleteFile);
+
+router.post("/:id/charts", authMiddleware, addChartToFile);
 
 router.patch("/:id/sharing", authMiddleware, toggleFileSharing);
 

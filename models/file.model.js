@@ -39,6 +39,11 @@ const fileSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    charts: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Chart",
+      default: [],
+    },
   },
   {
     timestamps: true,
