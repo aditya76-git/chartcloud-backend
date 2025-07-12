@@ -2,6 +2,7 @@ import express from "express";
 import {
   addChartToFile,
   deleteFile,
+  getChartsFromFileId,
   getFile,
   getFilesStats,
   listFiles,
@@ -20,6 +21,7 @@ router.get("/stats", authMiddleware, getFilesStats);
 
 router.get("/:id", authMiddleware, getFile);
 router.delete("/:id", authMiddleware, deleteFile);
+router.get("/:id/charts", getChartsFromFileId);
 
 router.post("/:id/charts", authMiddleware, addChartToFile);
 

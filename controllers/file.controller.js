@@ -279,3 +279,52 @@ export const addChartToFile = async (req, res) => {
       .json({ success: false, message: "Internal server error." });
   }
 };
+
+export const getChartsFromFileId = async (req, res) => {
+  const { id } = req.params; // fileId
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    const file = await File.findById(id);
+
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        message: "File not found.",
+      });
+    }
+
+    if (!file.sharing) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. File is not shared.",
+      });
+    }
+
+    const [charts, total] = await Promise.all([
+      Chart.find({ fileId: id }).skip(skip).limit(limit).lean(),
+      Chart.countDocuments({ fileId: id }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Charts fetched successfully",
+      data: charts,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching shared charts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching charts",
+      error,
+    });
+  }
+};
