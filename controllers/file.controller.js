@@ -312,6 +312,7 @@ export const getChartsFromFileId = async (req, res) => {
       success: true,
       message: "Charts fetched successfully",
       data: charts,
+      file,
       pagination: {
         total,
         page,
